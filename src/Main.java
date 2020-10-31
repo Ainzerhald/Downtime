@@ -42,6 +42,7 @@ public class Main extends JFrame{
 		getContentPane().setLayout(null);
 		
 		url = new JTextField();
+		url.setName("");
 		url.setBounds(100, 11, 187, 20);
 		getContentPane().add(url);
 		url.setColumns(10);
@@ -144,6 +145,9 @@ public class Main extends JFrame{
 	        	JOptionPane.showMessageDialog(null, "Работает");
 	        }
 	    } catch (IOException exception) {
+	    	if(check_email == 0) {
+        		JOptionPane.showMessageDialog(null, "Не работает");
+        	}
 	    	if(check_repeat == 1) {
 	    		new java.util.Timer().schedule(
 	    		        new TimerTask() {
@@ -186,7 +190,6 @@ public class Main extends JFrame{
 			properties.put("mail.smtp.host", "smtp.yandex.ru");
 			properties.put("mail.smtp.port", "465");
 		}
-
 		properties.put("mail.smtp.port", "587");
 
 		Session session = Session.getInstance(properties, new Authenticator() {
