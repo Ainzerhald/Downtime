@@ -1,3 +1,4 @@
+package Code;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -5,7 +6,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Properties;
@@ -25,9 +25,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 
+@SuppressWarnings("serial")
 public class Main extends JFrame{
 	private JTextField url;
 	private JTextField sec;
@@ -54,11 +53,37 @@ public class Main extends JFrame{
 		JButton check = new JButton("\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C");
 		check.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				int status = 0;
 				try {
-					access(url.getText(), 10000);
+					status = access(url.getText(), 10000);
 				} catch (MessagingException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
+				}
+				if(status == 1) {
+					JOptionPane.showMessageDialog(null, "Работает");
+				}
+				else if(status == 0) {
+					if (check_email == 0) {
+						JOptionPane.showMessageDialog(null, "Не работает");
+					}
+					if (check_repeat == 1) {
+						new java.util.Timer().schedule(new TimerTask() {
+							public void run() {
+								try {
+									access(url.getText(), 10000);
+								} catch (MessagingException e) {
+									e.printStackTrace();
+								}
+							}
+						}, Integer.parseInt(sec.getText()) * 1000);
+					}
+					if (check_email == 1) {
+						try {
+							send(adress.getText(), url.getText());
+						} catch (MessagingException e2) {
+							e2.printStackTrace();
+						}
+					}
 				}
 			}
 		});
@@ -133,77 +158,58 @@ public class Main extends JFrame{
 		});
 	}
 	
-	public void access(String url, int timeout) throws MessagingException {
+	public int access(String url, int timeout) throws MessagingException {
+		int status = 0;
 	    try {
-	        HttpURLConnection connection = (HttpURLConnection) new URL(url)
-	                .openConnection();
-	        connection.setConnectTimeout(timeout);
-	        connection.setReadTimeout(timeout);
-	        connection.setRequestMethod("HEAD");
-	        int responseCode = connection.getResponseCode();
-	        if (responseCode != 200) {
-	        	JOptionPane.showMessageDialog(null, "Работает");
-	        }
-	    } catch (IOException exception) {
-	    	if(check_email == 0) {
-        		JOptionPane.showMessageDialog(null, "Не работает");
-        	}
-	    	if(check_repeat == 1) {
-	    		new java.util.Timer().schedule(
-	    		        new TimerTask() {
-	    		            public void run() {
-	    		                try {
-									access(url, 10000);
-								} catch (MessagingException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-	    		            }
-	    		        }, 
-	    		        Integer.parseInt (sec.getText()) * 1000);
-	    	}
-	    	if(check_email == 1) {
-	    		send();
-	    	}
-	    }
+				HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+				connection.setConnectTimeout(timeout);
+				connection.setReadTimeout(timeout);
+				connection.setRequestMethod("HEAD");
+				connection.getResponseCode();
+				status = 1;
+		} catch (Exception e) {
+			status = 0;
+		}
+		return status;
 	}
 	
-	public void send() throws MessagingException {
-		String Toemail = adress.getText();
-		String FromEmail = "89225940713@mail.ru";
-		String yourpass = "Ainzerhald";
-		String subject = "Неработающий сервис";
-		String test = "Сервис " + url.getText() + " не работает";
-
-		String ending = "89225940713@mail.ru";
-
-		Properties properties = new Properties();
-
-		properties.put("mail.smtp.auth", "true");
-		properties.put("mail.smtp.starttls.enable", "true");
-
-		if (ending.contains("@gmail.com")) {
-			properties.put("mail.smtp.host", "smtp.gmail.com");
-		} else if (ending.contains("@mail.ru")) {
-			properties.put("mail.smtp.host", "smtp.mail.ru");
-		} else if (ending.contains("@yandex.ru")) {
-			properties.put("mail.smtp.host", "smtp.yandex.ru");
-			properties.put("mail.smtp.port", "465");
-		}
-		properties.put("mail.smtp.port", "587");
-
-		Session session = Session.getInstance(properties, new Authenticator() {
-			@Override
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(FromEmail, yourpass); // проверка ваших данных
+	public int send(String email, String service) throws MessagingException {
+		int status = 0;
+		try {
+			String FromEmail = "89225940713@mail.ru";
+			String yourpass = "Ainzerhald";
+			String subject = "Неработающий сервис";
+			String test = "Сервис " + service + " не работает";
+			String ending = "89225940713@mail.ru";
+			Properties properties = new Properties();
+			properties.put("mail.smtp.auth", "true");
+			properties.put("mail.smtp.starttls.enable", "true");
+			if (ending.contains("@gmail.com")) {
+				properties.put("mail.smtp.host", "smtp.gmail.com");
+			} else if (ending.contains("@mail.ru")) {
+				properties.put("mail.smtp.host", "smtp.mail.ru");
+			} else if (ending.contains("@yandex.ru")) {
+				properties.put("mail.smtp.host", "smtp.yandex.ru");
+				properties.put("mail.smtp.port", "465");
 			}
-		});
+			properties.put("mail.smtp.port", "587");
+			Session session = Session.getInstance(properties, new Authenticator() {
+				@Override
+				protected PasswordAuthentication getPasswordAuthentication() {
+					return new PasswordAuthentication(FromEmail, yourpass);
+				}
+			});
 			Message message = new MimeMessage(session);
 			message.setFrom(new InternetAddress(FromEmail));
-			message.setRecipient(Message.RecipientType.TO, new InternetAddress(Toemail)); // сама отправка																			// письма
+			message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));																		// письма
 			message.setSubject(subject);
 			message.setText(test);
 			Transport.send(message);
+			status = 1;
+		} catch (Exception e) {
+			status = 0;
+		}
+		return status;
 	}
 
 	public static void main(String[] args) {
